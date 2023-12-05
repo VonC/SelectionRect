@@ -46,15 +46,24 @@ namespace SelectionRect
             var currentPos = Mouse.GetPosition(Canvas1);
             model.Angle = center.GetAngle(currentPos) + 90;
 
-            var Rect = new Rect(_initialLeft, _initialTop, model.Width, model.Height);
-            var cornerPoints = new[] { Rect.TopLeft, Rect.TopRight, Rect.BottomRight, Rect.BottomLeft };
-            var m = new Matrix();
+            var rotatedRect = RotateRect(new Rect(_initialLeft, _initialTop, model.Width, model.Height), model.Angle, center);
+            model.Left = rotatedRect.Left;
+            model.Top = rotatedRect.Top;
+        }
 
-            m.RotateAt(model.Angle, center.X, center.Y);
+        private Rect RotateRect(Rect rect, double angle, Point center)
+        {
+            var cornerPoints = new[] { rect.TopLeft, rect.TopRight, rect.BottomRight, rect.BottomLeft };
+            var m = new Matrix();
+            m.RotateAt(angle, center.X, center.Y);
             m.Transform(cornerPoints);
 
-            model.Left = cornerPoints.Min(p => p.X);
-            model.Top = cornerPoints.Min(p => p.Y);
+            double minX = cornerPoints.Min(p => p.X);
+            double minY = cornerPoints.Min(p => p.Y);
+            double maxX = cornerPoints.Max(p => p.X);
+            double maxY = cornerPoints.Max(p => p.Y);
+
+            return new Rect(minX, minY, maxX - minX, maxY - minY);
         }
 
         private void RotateThumb_DragStarted(object sender, System.Windows.Controls.Primitives.DragStartedEventArgs e)
