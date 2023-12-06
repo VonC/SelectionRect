@@ -19,6 +19,19 @@ namespace SelectionRect
             DataContext = new RectModel() { Height = 200, Width = 100 , Left = 20, Top = 50};
         }
 
+        private Point _lastCenterPosition = new Point(0, 0);
+
+        private void CheckForCenterJump(RectModel model, string eventName)
+        {
+            var newCenterPosition = new Point(model.Left + model.CenterX, model.Top + model.CenterY);
+            if (Math.Abs(newCenterPosition.X - _lastCenterPosition.X) > 10 ||
+                Math.Abs(newCenterPosition.Y - _lastCenterPosition.Y) > 10)
+            {
+                Console.WriteLine($"Significant move detected by {eventName}: New Center = {newCenterPosition}");
+                _lastCenterPosition = newCenterPosition;
+            }
+        }
+
         private void CenterTopThumb_DragDelta(object sender, DragDeltaEventArgs e)
         {
             var thumb = sender as Thumb;
@@ -34,6 +47,7 @@ namespace SelectionRect
             model.Height = newHeight;
             model.Left = newLeft;
             model.Top = newTop;
+            CheckForCenterJump(model, "CenterTopThumb_DragDelta");
         }
 
         // Similar refactoring for other DragDelta methods
@@ -52,6 +66,8 @@ namespace SelectionRect
             model.Height = newHeight;
             model.Left = newLeft;
             model.Top = newTop;
+
+            CheckForCenterJump(model, "CenterLeftThumb_DragDelta");
         }
 
         private void CenterRightThumb_DragDelta(object sender, DragDeltaEventArgs e)
@@ -69,6 +85,8 @@ namespace SelectionRect
             model.Height = newHeight;
             model.Left = newLeft;
             model.Top = newTop;
+
+            CheckForCenterJump(model, "CenterRightThumb_DragDelta");
         }
 
         private void CenterBottomThumb_DragDelta(object sender, DragDeltaEventArgs e)
@@ -86,6 +104,7 @@ namespace SelectionRect
             model.Height = newHeight;
             model.Left = newLeft;
             model.Top = newTop;
+            CheckForCenterJump(model, "CenterBottomThumb_DragDelta");
         }
 
 
@@ -162,6 +181,7 @@ namespace SelectionRect
             var rotatedRect = RotateRect(new Rect(_initialLeft, _initialTop, model.Width, model.Height), model.Angle, center);
             model.Left = rotatedRect.Left;
             model.Top = rotatedRect.Top;
+            CheckForCenterJump(model, "RotateThumb_DragDelta");
         }
 
         private Rect RotateRect(Rect rect, double angle, Point center)
@@ -189,13 +209,26 @@ namespace SelectionRect
         }
 
 
-        private void CenterThumb_DragDelta(object sender, System.Windows.Controls.Primitives.DragDeltaEventArgs e)
+        private void CenterThumb_DragDelta(object sender, DragDeltaEventArgs e)
         {
             var thumb = sender as Thumb;
             var model = thumb.DataContext as RectModel;
-            model.Top += e.VerticalChange;
-            model.Left += e.HorizontalChange;
+            var transform = RectGrid.LayoutTransform as RotateTransform;
+            var angle = transform?.Angle ?? 0;
+            var radianAngle = angle * Math.PI / 180;
+            var cosAngle = Math.Cos(radianAngle);
+            var sinAngle = Math.Sin(radianAngle);
+
+            // Calculating new position considering the rotation
+            double newLeft = model.Left + (e.HorizontalChange * cosAngle - e.VerticalChange * sinAngle);
+            double newTop = model.Top + (e.VerticalChange * cosAngle + e.HorizontalChange * sinAngle);
+
+            model.Left = newLeft;
+            model.Top = newTop;
+
+            CheckForCenterJump(model, "CenterThumb_DragDelta");
         }
+
 
         private void CenterThumbBorder_MouseDown(object sender, MouseButtonEventArgs e)
         {
