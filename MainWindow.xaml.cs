@@ -19,21 +19,134 @@ namespace SelectionRect
             DataContext = new RectModel() { Height = 200, Width = 100 , Left = 20, Top = 50};
         }
 
-        private void CenterBottomThumb_DragDelta(object sender, System.Windows.Controls.Primitives.DragDeltaEventArgs e)
+        private void CenterTopThumb_DragDelta(object sender, DragDeltaEventArgs e)
         {
             var thumb = sender as Thumb;
             var model = thumb.DataContext as RectModel;
+            var transform = RectGrid.LayoutTransform as RotateTransform;
+            var angle = transform?.Angle ?? 0;
 
-            if (model.Height + e.VerticalChange >= 1)
-            {
-                model.Height += e.VerticalChange;
-            }
+            var (newWidth, newHeight, newLeft, newTop) = CalculateAdjustedSizeAndPosition(
+                model.Width, model.Height, model.Left, model.Top,
+                e.HorizontalChange, e.VerticalChange, angle, ThumbAction.ResizeFromTop);
+
+            model.Width = newWidth;
+            model.Height = newHeight;
+            model.Left = newLeft;
+            model.Top = newTop;
         }
 
-        private void CenterTopThumb_DragDelta(object sender, System.Windows.Controls.Primitives.DragDeltaEventArgs e)
+        // Similar refactoring for other DragDelta methods
+        private void CenterLeftThumb_DragDelta(object sender, DragDeltaEventArgs e)
         {
+            var thumb = sender as Thumb;
+            var model = thumb.DataContext as RectModel;
+            var transform = RectGrid.LayoutTransform as RotateTransform;
+            var angle = transform?.Angle ?? 0;
 
+            var (newWidth, newHeight, newLeft, newTop) = CalculateAdjustedSizeAndPosition(
+                model.Width, model.Height, model.Left, model.Top,
+                e.HorizontalChange, e.VerticalChange, angle, ThumbAction.ResizeFromLeft);
+
+            model.Width = newWidth;
+            model.Height = newHeight;
+            model.Left = newLeft;
+            model.Top = newTop;
         }
+
+        private void CenterRightThumb_DragDelta(object sender, DragDeltaEventArgs e)
+        {
+            var thumb = sender as Thumb;
+            var model = thumb.DataContext as RectModel;
+            var transform = RectGrid.LayoutTransform as RotateTransform;
+            var angle = transform?.Angle ?? 0;
+
+            var (newWidth, newHeight, newLeft, newTop) = CalculateAdjustedSizeAndPosition(
+                model.Width, model.Height, model.Left, model.Top,
+                e.HorizontalChange, e.VerticalChange, angle, ThumbAction.ResizeFromRight);
+
+            model.Width = newWidth;
+            model.Height = newHeight;
+            model.Left = newLeft;
+            model.Top = newTop;
+        }
+
+        private void CenterBottomThumb_DragDelta(object sender, DragDeltaEventArgs e)
+        {
+            var thumb = sender as Thumb;
+            var model = thumb.DataContext as RectModel;
+            var transform = RectGrid.LayoutTransform as RotateTransform;
+            var angle = transform?.Angle ?? 0;
+
+            var (newWidth, newHeight, newLeft, newTop) = CalculateAdjustedSizeAndPosition(
+                model.Width, model.Height, model.Left, model.Top,
+                e.HorizontalChange, e.VerticalChange, angle, ThumbAction.ResizeFromBottom);
+
+            model.Width = newWidth;
+            model.Height = newHeight;
+            model.Left = newLeft;
+            model.Top = newTop;
+        }
+
+
+        public enum ThumbAction
+        {
+            ResizeFromTop,
+            ResizeFromLeft,
+            ResizeFromRight,
+            ResizeFromBottom
+            // Add other actions as needed
+        }
+
+        private (double NewWidth, double NewHeight, double NewLeft, double NewTop) CalculateAdjustedSizeAndPosition(
+    double initialWidth, double initialHeight, double initialLeft, double initialTop,
+    double horizontalChange, double verticalChange, double angle, ThumbAction action)
+        {
+            var radianAngle = angle * Math.PI / 180;
+            var cosAngle = Math.Cos(radianAngle);
+            var sinAngle = Math.Sin(radianAngle);
+
+            double newWidth = initialWidth, newHeight = initialHeight;
+            double newLeft = initialLeft, newTop = initialTop;
+
+            switch (action)
+            {
+                case ThumbAction.ResizeFromTop:
+                    var verticalAdjustmentTop = verticalChange * cosAngle;
+                    if (initialHeight - verticalAdjustmentTop >= 1)
+                    {
+                        newHeight -= verticalAdjustmentTop;
+                        newTop += verticalChange;
+                    }
+                    break;
+                case ThumbAction.ResizeFromLeft:
+                    var horizontalAdjustmentLeft = horizontalChange * cosAngle;
+                    if (initialWidth - horizontalAdjustmentLeft >= 1)
+                    {
+                        newWidth -= horizontalAdjustmentLeft;
+                        newLeft += horizontalChange;
+                    }
+                    break;
+                case ThumbAction.ResizeFromRight:
+                    var horizontalAdjustmentRight = horizontalChange * cosAngle;
+                    if (initialWidth + horizontalAdjustmentRight >= 1)
+                    {
+                        newWidth += horizontalAdjustmentRight;
+                    }
+                    break;
+                case ThumbAction.ResizeFromBottom:
+                    var verticalAdjustmentBottom = verticalChange * cosAngle;
+                    if (initialHeight + verticalAdjustmentBottom >= 1)
+                    {
+                        newHeight += verticalAdjustmentBottom;
+                    }
+                    break;
+                    // Add other cases if you have other resizing actions
+            }
+
+            return (newWidth, newHeight, newLeft, newTop);
+        }
+
 
         private void RotateThumb_DragDelta(object sender, System.Windows.Controls.Primitives.DragDeltaEventArgs e)
         {
@@ -75,15 +188,6 @@ namespace SelectionRect
             _initialTop = model.Top;
         }
 
-        private void CenterLeftThumb_DragDelta(object sender, System.Windows.Controls.Primitives.DragDeltaEventArgs e)
-        {
-
-        }
-
-        private void CenterRightThumb_DragDelta(object sender, System.Windows.Controls.Primitives.DragDeltaEventArgs e)
-        {
-
-        }
 
         private void CenterThumb_DragDelta(object sender, System.Windows.Controls.Primitives.DragDeltaEventArgs e)
         {
