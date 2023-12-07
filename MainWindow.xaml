@@ -30,7 +30,8 @@
             <Grid Canvas.Left="{Binding Left}" Name="RectGrid"
                   Canvas.Top="{Binding Top}"
                   Width="{Binding Width}"
-                  Height="{Binding Height}">
+                  Height="{Binding Height}"
+                  RenderTransformOrigin="0.5,0.5">
                 <Grid.LayoutTransform>
                     <RotateTransform Angle="{Binding Angle}" />
                 </Grid.LayoutTransform>

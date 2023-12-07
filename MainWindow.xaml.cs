@@ -1,5 +1,6 @@
 ﻿using System;
 using System.ComponentModel;
+using System.Diagnostics;
 using System.Linq;
 using System.Windows;
 using System.Windows.Controls.Primitives;
@@ -27,7 +28,7 @@ namespace SelectionRect
             if (Math.Abs(newCenterPosition.X - _lastCenterPosition.X) > 10 ||
                 Math.Abs(newCenterPosition.Y - _lastCenterPosition.Y) > 10)
             {
-                Console.WriteLine($"Significant move detected by {eventName}: New Center = {newCenterPosition}");
+                Debug.WriteLine($"======= ====== Significant move detected by {eventName}: New Center = {newCenterPosition}");
                 _lastCenterPosition = newCenterPosition;
             }
         }
@@ -167,22 +168,29 @@ namespace SelectionRect
         }
 
 
-        private void RotateThumb_DragDelta(object sender, System.Windows.Controls.Primitives.DragDeltaEventArgs e)
+        private void RotateThumb_DragDelta(object sender, DragDeltaEventArgs e)
         {
             var thumb = sender as Thumb;
             var model = thumb.DataContext as RectModel;
 
-            var initialAngle = model.Angle;
-            var center = new Point(model.CenterX, model.CenterY);
-            center = RectGrid.TranslatePoint(center, Canvas1);
-            var currentPos = Mouse.GetPosition(Canvas1);
-            model.Angle = center.GetAngle(currentPos) + 90;
+            // Debugging log
+            Debug.WriteLine($"Before Rotate: Left={model.Left}, Top={model.Top}, Angle={model.Angle}");
 
-            var rotatedRect = RotateRect(new Rect(_initialLeft, _initialTop, model.Width, model.Height), model.Angle, center);
-            model.Left = rotatedRect.Left;
-            model.Top = rotatedRect.Top;
+            // Calculate the center of the rectangle in canvas coordinates
+            var rectCenter = new Point(model.Left + model.Width / 2, model.Top + model.Height / 2);
+            var mousePosition = Mouse.GetPosition(Canvas1);
+
+            // Calculate the angle of rotation based on the mouse position
+            model.Angle = rectCenter.GetAngle(mousePosition) + 90;
+
+            // No need to change Left and Top as the rotation is around the center
+            // Debugging log
+            Debug.WriteLine($"After Rotate: Left={model.Left}, Top={model.Top}, Angle={model.Angle}");
+
             CheckForCenterJump(model, "RotateThumb_DragDelta");
         }
+
+
 
         private Rect RotateRect(Rect rect, double angle, Point center)
         {
@@ -199,13 +207,17 @@ namespace SelectionRect
             return new Rect(minX, minY, maxX - minX, maxY - minY);
         }
 
-        private void RotateThumb_DragStarted(object sender, System.Windows.Controls.Primitives.DragStartedEventArgs e)
+        private void RotateThumb_DragStarted(object sender, DragStartedEventArgs e)
         {
             var thumb = sender as Thumb;
             var model = thumb.DataContext as RectModel;
 
+            // Store the initial position
             _initialLeft = model.Left;
             _initialTop = model.Top;
+
+            // Debugging log
+            Debug.WriteLine($"Rotate Started: _initialLeft={_initialLeft}, _initialTop={_initialTop}");
         }
 
 
@@ -304,18 +316,7 @@ namespace SelectionRect
             }
         }
 
-        private double _Top;
-        public double Top
-        {
-            get { return _Top; }
-            set
-            {
-                if (value == _Top) return;
-                _Top = value;
-                OnPropertyChanged(nameof(Top));
-            }
-        }
-
+        // Add debug information to property setters
         private double _Left;
         public double Left
         {
@@ -324,7 +325,20 @@ namespace SelectionRect
             {
                 if (value == _Left) return;
                 _Left = value;
+                Debug.WriteLine($"Left Changed: {_Left}");
                 OnPropertyChanged(nameof(Left));
+            }
+        }
+        private double _Top;
+        public double Top
+        {
+            get { return _Top; }
+            set
+            {
+                if (value == _Top) return;
+                _Top = value;
+                Debug.WriteLine($"Top Changed: {_Top}");
+                OnPropertyChanged(nameof(Top));
             }
         }
 
